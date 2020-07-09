@@ -24,15 +24,15 @@ try:
     MYSQL_CONFIG = yaml.safe_load(open("{}/config/mysql.yml".format(BASE_DIR)))
 except FileNotFoundError:
     MYSQL_CONFIG = {}
-# try:
-#     INTERPRO_CONFIG_LOCAL = yaml.safe_load(
-#         open("{}/config/interpro.local.yml".format(BASE_DIR))
-#     )
-# except FileNotFoundError:
-#     INTERPRO_CONFIG_LOCAL = {}
-#
-# for key in INTERPRO_CONFIG_LOCAL:
-#     INTERPRO_CONFIG[key] = INTERPRO_CONFIG_LOCAL.get(key, None)
+try:
+    GP_CONFIG_LOCAL = yaml.safe_load(
+        open("{}/config/gp.local.yml".format(BASE_DIR))
+    )
+except FileNotFoundError:
+    GP_CONFIG_LOCAL = {}
+
+for key in GP_CONFIG_LOCAL:
+    GP_CONFIG[key] = GP_CONFIG_LOCAL.get(key, None)
 
 
 # Quick-start development settings - unsuitable for production
@@ -155,7 +155,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = GP_CONFIG.get("static_url", "/static_files/")
+STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", "static_files"))
 
 GRAPHENE = {
     'SCHEMA': 'genomeproperties.schema.schema',

@@ -1,2 +1,3 @@
 debug: true
 allowed_host: []
+static_url: "/genomeproperties/api/static_files/"

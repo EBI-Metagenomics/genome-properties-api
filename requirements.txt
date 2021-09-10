@@ -16,4 +16,4 @@ PyYAML==5.4.1
 Rx==1.6.1
 singledispatch==3.6.1
 six==1.15.0
-sqlparse==0.4.1
+sqlparse==0.4.2

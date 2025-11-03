@@ -1,0 +1,62 @@
+version: '3'
+
+tasks:
+  install:
+    desc: Install dependencies using uv
+    cmds:
+      - uv sync
+
+  setup:
+    desc: Initial setup - create secrets.yml from template
+    cmds:
+      - |
+        if [ ! -f config/secrets.yml ]; then
+          cp config/secrets-template.yml config/secrets.yml
+          echo "Created config/secrets.yml - please update with your actual secrets"
+        else
+          echo "config/secrets.yml already exists"
+        fi
+
+  migrate:
+    desc: Run database migrations
+    cmds:
+      - uv run python manage.py migrate
+
+  makemigrations:
+    desc: Create new database migrations
+    cmds:
+      - uv run python manage.py makemigrations
+
+  runserver:
+    desc: Run development server
+    cmds:
+      - uv run python manage.py runserver
+
+  shell:
+    desc: Open Django shell
+    cmds:
+      - uv run python manage.py shell
+
+  createsuperuser:
+    desc: Create a superuser
+    cmds:
+      - uv run python manage.py createsuperuser
+
+  clean:
+    desc: Clean up Python cache files
+    cmds:
+      - find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+      - find . -type f -name "*.pyc" -delete
+
+  db-shell:
+    desc: Open SQLite shell
+    cmds:
+      - sqlite3 db.sqlite3
+
+  dev:
+    desc: Full development setup
+    cmds:
+      - task: setup
+      - task: install
+      - task: migrate
+      - echo "Development environment ready! Run 'task runserver' to start."

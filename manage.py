@@ -3,17 +3,9 @@
 import os
 import sys
 
-try:
-    import pymysql
-
-    pymysql.version_info = (1, 4, 6, "final", 0)  # change mysqlclient version
-    pymysql.install_as_MySQLdb()
-    print("running pymysql")
-
-except ImportError:
-    pass
 
 def main():
+    """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'genomeproperties.settings')
     try:
         from django.core.management import execute_from_command_line

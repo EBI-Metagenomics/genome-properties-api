@@ -2,8 +2,11 @@ from graphene import relay, ObjectType
 from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
 
-from web.models import GenomeProperty, GoTerms, GpDatabaseLink, GpLitRef, GpStep, GpStepEvidenceGp, GpStepEvidenceIpr, \
-    GpStepToGo, IprStepToGo, LiteratureReference, PropDef, PropGoLink, PropLink, PropRef, PropStep, StepEvLink
+from web.models import (
+    GenomeProperty, GoTerms, GpDatabaseLink, GpLitRef, GpStep,
+    GpStepEvidenceGp, GpStepEvidenceIpr, GpStepToGo, IprStepToGo,
+    LiteratureReference,
+)
 
 
 class GenomePropertyNode(DjangoObjectType):
@@ -82,48 +85,6 @@ class LiteratureReferenceNode(DjangoObjectType):
         interfaces = (relay.Node, )
 
 
-class PropDefNode(DjangoObjectType):
-    class Meta:
-        model = PropDef
-        filter_fields = ['prop_def_id', 'property', 'prop_type', 'prop_acc', 'thresh', 'ispublic']
-        interfaces = (relay.Node, )
-
-
-class PropGoLinkNode(DjangoObjectType):
-    class Meta:
-        model = PropGoLink
-        filter_fields = ['prop_def', 'go_id']
-        interfaces = (relay.Node, )
-
-
-class PropLinkNode(DjangoObjectType):
-    class Meta:
-        model = PropLink
-        filter_fields = ['parent', 'child']
-        interfaces = (relay.Node, )
-
-
-class PropRefNode(DjangoObjectType):
-    class Meta:
-        model = PropRef
-        filter_fields = ['prop_def']
-        interfaces = (relay.Node, )
-
-
-class PropStepNode(DjangoObjectType):
-    class Meta:
-        model = PropStep
-        filter_fields = ['prop_step_id', 'prop_def']
-        interfaces = (relay.Node, )
-
-
-class StepEvLinkNode(DjangoObjectType):
-    class Meta:
-        model = StepEvLink
-        filter_fields = ['step_ev_id', 'prop_step']
-        interfaces = (relay.Node, )
-
-
 class Query(ObjectType):
     genome_property = relay.Node.Field(GenomePropertyNode)
     genome_properties = DjangoFilterConnectionField(GenomePropertyNode)
@@ -154,21 +115,3 @@ class Query(ObjectType):
 
     literature_reference = relay.Node.Field(LiteratureReferenceNode)
     literature_references = DjangoFilterConnectionField(LiteratureReferenceNode)
-
-    prop_def = relay.Node.Field(PropDefNode)
-    all_prop_def = DjangoFilterConnectionField(PropDefNode)
-
-    prop_go_link = relay.Node.Field(PropGoLinkNode)
-    all_prop_go_link = DjangoFilterConnectionField(PropGoLinkNode)
-
-    prop_link = relay.Node.Field(PropLinkNode)
-    prop_links = DjangoFilterConnectionField(PropLinkNode)
-
-    prop_ref = relay.Node.Field(PropRefNode)
-    all_prop_ref = DjangoFilterConnectionField(PropRefNode)
-
-    prop_step = relay.Node.Field(PropStepNode)
-    prop_steps = DjangoFilterConnectionField(PropStepNode)
-
-    step_ev_link = relay.Node.Field(StepEvLinkNode)
-    all_step_ev_link = DjangoFilterConnectionField(StepEvLinkNode)

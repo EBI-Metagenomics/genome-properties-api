@@ -21,10 +21,6 @@ try:
 except FileNotFoundError:
     GP_CONFIG = {}
 try:
-    MYSQL_CONFIG = yaml.safe_load(open("{}/config/mysql.yml".format(BASE_DIR)))
-except FileNotFoundError:
-    MYSQL_CONFIG = {}
-try:
     GP_CONFIG_LOCAL = yaml.safe_load(
         open("{}/config/gp.local.yml".format(BASE_DIR))
     )
@@ -107,14 +103,8 @@ WSGI_APPLICATION = 'genomeproperties.wsgi.application'
 
 DATABASES = {
     "default": {
-        "ENGINE": MYSQL_CONFIG.get("engine", "django.db.backends.sqlite3"),
-        "NAME": MYSQL_CONFIG.get(
-            "sid", os.path.join(BASE_DIR, "../database/db.sqlite3")
-        ),
-        "USER": MYSQL_CONFIG.get("user"),
-        "PASSWORD": MYSQL_CONFIG.get("password"),
-        "HOST": MYSQL_CONFIG.get("host"),
-        "PORT": MYSQL_CONFIG.get("port"),
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": os.path.join(BASE_DIR, "genome_properties.db"),
     }
 }
 
@@ -158,9 +148,8 @@ USE_TZ = True
 STATIC_URL = GP_CONFIG.get("static_url", "/static_files/")
 STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", "static_files"))
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 GRAPHENE = {
     'SCHEMA': 'genomeproperties.schema.schema',
-    'MIDDLEWARE': [
-        'graphene_django.debug.DjangoDebugMiddleware',
-    ]
 }

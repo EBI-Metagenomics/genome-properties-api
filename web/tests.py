@@ -2,6 +2,26 @@ from django.test import SimpleTestCase, override_settings
 from django.urls import reverse
 
 from genomeproperties.schema import schema
+from genomeproperties.settings import _extend_allowed_hosts
+
+
+class AllowedHostsTests(SimpleTestCase):
+    def test_pod_ip_is_appended_for_kubelet_probes(self):
+        self.assertEqual(
+            _extend_allowed_hosts(["localhost", "127.0.0.1"], "10.251.74.247"),
+            ["localhost", "127.0.0.1", "10.251.74.247"],
+        )
+
+    def test_empty_pod_ip_is_ignored(self):
+        self.assertEqual(
+            _extend_allowed_hosts(["localhost"], "", None),
+            ["localhost"],
+        )
+
+    @override_settings(ALLOWED_HOSTS=["localhost", "10.251.74.247"])
+    def test_health_accepts_pod_ip_host_header(self):
+        response = self.client.get("/health/", HTTP_HOST="10.251.74.247:8000")
+        self.assertEqual(response.status_code, 200)
 
 
 class HealthCheckTests(SimpleTestCase):

@@ -21,6 +21,7 @@ The SQLite file is not stored in git. Place it at `genome_properties.db` in the 
 | `DJANGO_SECRET_KEY` | insecure dev key | Django secret |
 | `DJANGO_DEBUG` | `true` | Debug / GraphiQL extras |
 | `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` | Host allow-list |
+| `POD_IP` | empty | Pod IP from the K8s downward API; appended to `ALLOWED_HOSTS` for kubelet probes |
 | `DJANGO_FORCE_SCRIPT_NAME` | empty | Sub-path, e.g. `/genomeproperties/api` |
 | `DJANGO_STATIC_URL` | `/static/` | Static URL |
 | `DJANGO_CORS_ALLOW_ALL` | same as debug | Open CORS |

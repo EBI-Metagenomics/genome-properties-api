@@ -14,7 +14,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("DJANGO_SECRET_KEY", default="insecure-dev-key-change-me")
 DEBUG = config("DJANGO_DEBUG", default=True, cast=bool)
-ALLOWED_HOSTS = config("DJANGO_ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
+
+
+def _extend_allowed_hosts(hosts, *extra):
+    allowed = list(hosts)
+    for host in extra:
+        if host and host not in allowed:
+            allowed.append(host)
+    return allowed
+
+
+# Public hostnames from env. Kubelet probes use the pod IP as HTTP Host, so
+# append POD_IP when the downward API provides it.
+_configured_hosts = config("DJANGO_ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
+ALLOWED_HOSTS = _extend_allowed_hosts(_configured_hosts, config("POD_IP", default=""))
 
 FORCE_SCRIPT_NAME = config("DJANGO_FORCE_SCRIPT_NAME", default="") or None
 
@@ -45,8 +58,8 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = config("DJANGO_CORS_ALLOW_ALL", default=DEBUG, cast=bool)
 
-CORS_ALLOWED_ORIGINS = [f"http://{h}" for h in ALLOWED_HOSTS] + [
-    f"https://{h}" for h in ALLOWED_HOSTS
+CORS_ALLOWED_ORIGINS = [f"http://{h}" for h in _configured_hosts] + [
+    f"https://{h}" for h in _configured_hosts
 ]
 if DEBUG:
     CORS_ALLOWED_ORIGINS += [

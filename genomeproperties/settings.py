@@ -1,9 +1,14 @@
 """Django settings for the Genome Properties GraphQL API."""
 
+import logging
+
 from pathlib import Path
 
 from corsheaders.defaults import default_headers
 from decouple import Csv, config
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -39,11 +44,20 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = config("DJANGO_CORS_ALLOW_ALL", default=DEBUG, cast=bool)
-CORS_ALLOWED_ORIGINS = config(
-    "DJANGO_CORS_ALLOWED_ORIGINS",
-    default="http://localhost:3000,http://127.0.0.1:3000",
-    cast=Csv(),
-)
+
+CORS_ALLOWED_ORIGINS = [f"http://{h}" for h in ALLOWED_HOSTS] + [
+    f"https://{h}" for h in ALLOWED_HOSTS
+]
+if DEBUG:
+    CORS_ALLOWED_ORIGINS += [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+logger.info("ALLOWED_HOSTS: %s", ALLOWED_HOSTS)
+logger.info("CORS_ALLOWED_ORIGINS: %s", CORS_ALLOWED_ORIGINS)
+
 CORS_ALLOW_HEADERS = list(default_headers) + ["apollo-require-preflight"]
 
 ROOT_URLCONF = "genomeproperties.urls"

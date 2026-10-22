@@ -1,10 +1,17 @@
-from graphene import relay, ObjectType
+from graphene import ObjectType, relay
 from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
 
 from web.models import (
-    GenomeProperty, GoTerms, GpDatabaseLink, GpLitRef, GpStep,
-    GpStepEvidenceGp, GpStepEvidenceIpr, GpStepToGo, IprStepToGo,
+    GenomeProperty,
+    GoTerms,
+    GpDatabaseLink,
+    GpLitRef,
+    GpStep,
+    GpStepEvidenceGp,
+    GpStepEvidenceIpr,
+    GpStepToGo,
+    IprStepToGo,
     LiteratureReference,
 )
 
@@ -12,77 +19,93 @@ from web.models import (
 class GenomePropertyNode(DjangoObjectType):
     class Meta:
         model = GenomeProperty
+        fields = "__all__"
         filter_fields = {
-            'accession': ['exact'],
-            'description': ['exact'],
-            'type': ['exact', 'icontains', 'istartswith'],
-            'author': ['exact'],
-            'threshold': ['lt', 'gt'],
+            "accession": ["exact"],
+            "description": ["exact"],
+            "type": ["exact", "icontains", "istartswith"],
+            "author": ["exact"],
+            "threshold": ["lt", "gt"],
         }
-        interfaces = (relay.Node, )
+        interfaces = (relay.Node,)
 
 
 class GoTermsNode(DjangoObjectType):
     class Meta:
         model = GoTerms
-        filter_fields = ['go_id', 'term', 'category']
-        interfaces = (relay.Node, )
+        fields = "__all__"
+        filter_fields = ["go_id", "term", "category"]
+        interfaces = (relay.Node,)
 
 
 class GpDatabaseLinkNode(DjangoObjectType):
     class Meta:
         model = GpDatabaseLink
-        filter_fields = ['gp_accession', 'db_id', 'db_link']
-        interfaces = (relay.Node, )
+        fields = "__all__"
+        filter_fields = ["gp_accession", "db_id", "db_link"]
+        interfaces = (relay.Node,)
 
 
 class GpLitRefNode(DjangoObjectType):
     class Meta:
         model = GpLitRef
-        filter_fields = ['gp_accession', 'literature_reference_pmid', 'list_order']
-        interfaces = (relay.Node, )
+        fields = "__all__"
+        filter_fields = ["gp_accession", "literature_reference_pmid", "list_order"]
+        interfaces = (relay.Node,)
 
 
 class GpStepNode(DjangoObjectType):
     class Meta:
         model = GpStep
-        filter_fields = ['gp_accession', 'auto_step', 'step_number', 'step_id', 'step_display_name']
-        interfaces = (relay.Node, )
+        fields = "__all__"
+        filter_fields = ["gp_accession", "auto_step", "step_number", "step_id", "step_display_name"]
+        interfaces = (relay.Node,)
 
 
 class GpStepEvidenceGpNode(DjangoObjectType):
     class Meta:
         model = GpStepEvidenceGp
-        filter_fields = ['auto_step', 'gp_accession', 'auto_gp_step']
-        interfaces = (relay.Node, )
+        fields = "__all__"
+        filter_fields = ["auto_step", "gp_accession", "auto_gp_step"]
+        interfaces = (relay.Node,)
 
 
 class GpStepEvidenceIprNode(DjangoObjectType):
     class Meta:
         model = GpStepEvidenceIpr
-        filter_fields = ['auto_step', 'interpro_acc', 'signature_acc', 'sufficient', 'auto_ipr_step']
-        interfaces = (relay.Node, )
+        fields = "__all__"
+        filter_fields = [
+            "auto_step",
+            "interpro_acc",
+            "signature_acc",
+            "sufficient",
+            "auto_ipr_step",
+        ]
+        interfaces = (relay.Node,)
 
 
 class GpStepToGoNode(DjangoObjectType):
     class Meta:
         model = GpStepToGo
-        filter_fields = ['auto_gp_step', 'go']
-        interfaces = (relay.Node, )
+        fields = "__all__"
+        filter_fields = ["auto_gp_step", "go"]
+        interfaces = (relay.Node,)
 
 
 class IprStepToGoNode(DjangoObjectType):
     class Meta:
         model = IprStepToGo
-        filter_fields = ['auto_ipr_step', 'go']
-        interfaces = (relay.Node, )
+        fields = "__all__"
+        filter_fields = ["auto_ipr_step", "go"]
+        interfaces = (relay.Node,)
 
 
 class LiteratureReferenceNode(DjangoObjectType):
     class Meta:
         model = LiteratureReference
-        filter_fields = ['pmid', 'title', 'author', 'journal']
-        interfaces = (relay.Node, )
+        fields = "__all__"
+        filter_fields = ["pmid", "title", "author", "journal"]
+        interfaces = (relay.Node,)
 
 
 class Query(ObjectType):

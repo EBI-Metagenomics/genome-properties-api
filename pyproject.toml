@@ -1,0 +1,38 @@
+[project]
+name = "genome-properties-api"
+version = "1.0.0"
+description = "GraphQL API for the Genome Properties resource"
+authors = [{ name = "EMBL-EBI Microbiome Informatics" }]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django==5.2.8",
+    "graphene-django==3.2.3",
+    "django-filter==25.2",
+    "django-cors-headers==4.7.0",
+    "gunicorn==23.0.0",
+    "pyyaml==6.0.3",
+    "python-decouple==3.8",
+    "whitenoise==6.9.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff==0.9.10",
+    "pytest==8.3.5",
+    "pytest-django==4.11.1",
+    "pytest-cov==6.0.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = ["web/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "W"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "genomeproperties.settings"
+python_files = ["tests.py", "test_*.py"]
+addopts = "--reuse-db"

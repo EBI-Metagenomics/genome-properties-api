@@ -1,7 +1,0 @@
-Django>=4.2,<5
-graphene>=3.0,<4
-graphene-django>=3.0,<4
-django-filter>=23.0
-django-cors-headers>=4.0
-gunicorn>=21.0
-PyYAML>=6.0

@@ -1,5 +1,5 @@
-from django.test import SimpleTestCase, override_settings
-from django.urls import reverse
+from django.contrib.staticfiles.handlers import StaticFilesHandler
+from django.test import RequestFactory, SimpleTestCase, override_settings
 
 from genomeproperties.schema import schema
 from genomeproperties.settings import _extend_allowed_hosts
@@ -24,9 +24,26 @@ class AllowedHostsTests(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
 
 
+class GraphiqlStaticTests(SimpleTestCase):
+    @override_settings(
+        DEBUG=True,
+        STATIC_URL="/genomeproperties/api/static/",
+        FORCE_SCRIPT_NAME="/genomeproperties/api",
+    )
+    def test_graphiql_js_is_served_from_prefixed_path_info(self):
+        handler = StaticFilesHandler(lambda *_args, **_kwargs: None)
+        request = RequestFactory().get("/genomeproperties/api/static/graphene_django/graphiql.js")
+        request.path = "/genomeproperties/api/genomeproperties/api/static/graphene_django/graphiql.js"
+        request.path_info = "/genomeproperties/api/static/graphene_django/graphiql.js"
+        response = handler.serve(request)
+        self.assertEqual(response.status_code, 200)
+        body = b"".join(response.streaming_content)
+        self.assertIn(b"GraphiQL", body)
+
+
 class HealthCheckTests(SimpleTestCase):
     def test_health_returns_ok(self):
-        response = self.client.get(reverse("health"))
+        response = self.client.get("/health/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"status": "ok"})
 

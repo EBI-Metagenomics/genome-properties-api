@@ -127,9 +127,15 @@ STORAGES = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage"
+            if DEBUG
+            else "whitenoise.storage.CompressedStaticFilesStorage"
+        ),
     },
 }
+WHITENOISE_USE_FINDERS = DEBUG
+WHITENOISE_AUTOREFRESH = DEBUG
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
@@ -139,3 +145,5 @@ GRAPHENE = {
 
 if DEBUG:
     GRAPHENE["MIDDLEWARE"] = ["graphene_django.debug.DjangoDebugMiddleware"]
+
+from genomeproperties import static_handler as _static_handler  # noqa: E402,F401

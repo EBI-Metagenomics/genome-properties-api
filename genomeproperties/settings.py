@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_filters",
     "graphene_django",
-    "web.apps.WebConfig",
+    "genomeproperties.apps.GenomePropertiesConfig",
 ]
 
 MIDDLEWARE = [

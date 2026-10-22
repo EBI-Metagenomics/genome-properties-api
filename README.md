@@ -7,8 +7,11 @@ GraphQL API for the Genome Properties resource. The service is a Django 5.2 appl
 ```bash
 uv sync
 export DATABASE_PATH=/path/to/genome_properties.db
+uv run python manage.py migrate
 uv run python manage.py runserver
 ```
+
+Use `uv run` (Python 3.12+) so Django loads from `.venv`. A conda or system `python manage.py` will miss packages such as `python-decouple`.
 
 GraphiQL is available at [http://127.0.0.1:8000/graphql/](http://127.0.0.1:8000/graphql/). A liveness probe is at `/health/`.
 

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from web.models import GenomeProperty, LiteratureReference
+from .models import GenomeProperty, LiteratureReference
 
 
 @admin.register(GenomeProperty)

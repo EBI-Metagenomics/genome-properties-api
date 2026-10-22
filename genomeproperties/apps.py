@@ -12,9 +12,9 @@ def _configure_sqlite(sender, connection, **kwargs):
     cursor.execute("PRAGMA busy_timeout=5000;")
 
 
-class WebConfig(AppConfig):
+class GenomePropertiesConfig(AppConfig):
     default_auto_field = "django.db.models.AutoField"
-    name = "web"
+    name = "genomeproperties"
     verbose_name = "Genome Properties"
 
     def ready(self):

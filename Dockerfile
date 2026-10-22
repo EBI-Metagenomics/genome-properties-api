@@ -11,8 +11,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --no-install-project --no-dev
 
 COPY genomeproperties /app/genomeproperties
-COPY web /app/web
-COPY config /app/config
 COPY manage.py /app/
 
 RUN --mount=type=cache,target=/root/.cache/uv \

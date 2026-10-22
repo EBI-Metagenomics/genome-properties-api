@@ -1,8 +1,8 @@
 from django.contrib.staticfiles.handlers import StaticFilesHandler
 from django.test import RequestFactory, SimpleTestCase, override_settings
 
-from genomeproperties.schema import schema
-from genomeproperties.settings import _extend_allowed_hosts
+from .schema import schema
+from .settings import _extend_allowed_hosts
 
 
 class AllowedHostsTests(SimpleTestCase):

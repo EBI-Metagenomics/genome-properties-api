@@ -95,7 +95,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='GpDatabaseLink',
             fields=[
-                ('gp_accession', models.ForeignKey(db_column='gp_accession', on_delete=django.db.models.deletion.PROTECT, primary_key=True, serialize=False, to='web.genomeproperty')),
+                ('gp_accession', models.ForeignKey(db_column='gp_accession', on_delete=django.db.models.deletion.PROTECT, primary_key=True, serialize=False, to='genomeproperties.genomeproperty')),
                 ('db_id', models.TextField()),
                 ('db_link', models.TextField()),
                 ('other_params', models.TextField(blank=True, null=True)),
@@ -109,7 +109,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='GpLitRef',
             fields=[
-                ('gp_accession', models.ForeignKey(db_column='gp_accession', on_delete=django.db.models.deletion.PROTECT, primary_key=True, serialize=False, to='web.genomeproperty')),
+                ('gp_accession', models.ForeignKey(db_column='gp_accession', on_delete=django.db.models.deletion.PROTECT, primary_key=True, serialize=False, to='genomeproperties.genomeproperty')),
                 ('list_order', models.IntegerField()),
             ],
             options={
@@ -120,7 +120,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='GpStepToGo',
             fields=[
-                ('auto_gp_step', models.ForeignKey(db_column='auto_gp_step', on_delete=django.db.models.deletion.PROTECT, primary_key=True, serialize=False, to='web.gpstepevidencegp')),
+                ('auto_gp_step', models.ForeignKey(db_column='auto_gp_step', on_delete=django.db.models.deletion.PROTECT, primary_key=True, serialize=False, to='genomeproperties.gpstepevidencegp')),
             ],
             options={
                 'db_table': 'gp_step_to_go',
@@ -130,7 +130,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='IprStepToGo',
             fields=[
-                ('auto_ipr_step', models.ForeignKey(db_column='auto_ipr_step', on_delete=django.db.models.deletion.PROTECT, primary_key=True, serialize=False, to='web.gpstepevidenceipr')),
+                ('auto_ipr_step', models.ForeignKey(db_column='auto_ipr_step', on_delete=django.db.models.deletion.PROTECT, primary_key=True, serialize=False, to='genomeproperties.gpstepevidenceipr')),
             ],
             options={
                 'db_table': 'ipr_step_to_go',

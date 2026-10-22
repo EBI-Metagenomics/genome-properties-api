@@ -1,5 +1,0 @@
-debug: true
-allowed_host:
-  - localhost
-  - 127.0.0.1
-static_url: "/static/"

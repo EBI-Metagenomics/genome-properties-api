@@ -15,3 +15,5 @@ config/gp.local.yml
 staticfiles/
 .pytest_cache/
 .ruff_cache/
+/set-env-dev.sh
+/set-env-prod.sh

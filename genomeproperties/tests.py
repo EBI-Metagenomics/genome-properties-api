@@ -48,6 +48,31 @@ class HealthCheckTests(SimpleTestCase):
         self.assertEqual(response.json(), {"status": "ok"})
 
 
+class PrefixedApiTests(SimpleTestCase):
+    databases = {"default"}
+
+    def test_health_under_script_prefix(self):
+        response = self.client.get("/genomeproperties/api/health/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "ok"})
+
+    def test_graphql_under_script_prefix(self):
+        response = self.client.get(
+            "/genomeproperties/api/graphql/",
+            HTTP_ACCEPT="text/html",
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_graphql_post_under_script_prefix(self):
+        response = self.client.post(
+            "/genomeproperties/api/graphql/",
+            data={"query": "{ __typename }"},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("data", response.json())
+
+
 class SchemaTests(SimpleTestCase):
     def test_query_type_exposes_genome_properties(self):
         query_type = schema.graphql_schema.get_type("Query")

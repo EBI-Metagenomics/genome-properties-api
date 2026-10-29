@@ -1,5 +1,6 @@
 from ninja import NinjaAPI
 
+from genomeproperties.api.docs import RequestRelativeSwagger
 from genomeproperties.api.v1.genome_properties import GenomePropertyAPI
 from genomeproperties.api.v1.health import HealthAPI
 from genomeproperties.api.v1.hierarchy import HierarchyAPI
@@ -21,6 +22,7 @@ class ApiFactory:
             version=ApiMeta.VERSION,
             docs_url=ApiPath.DOCS,
             openapi_url=ApiPath.OPENAPI,
+            docs=RequestRelativeSwagger(),
             urls_namespace=urls_namespace,
         )
         HealthAPI().register(api)

@@ -104,7 +104,10 @@ class OpenApiTests(SimpleTestCase):
     def test_swagger_ui_is_published(self):
         response = self.client.get("/api/v1/docs")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("swagger", response.content.decode().lower())
+        body = response.content.decode()
+        self.assertIn("swagger", body.lower())
+        self.assertIn('"url": "openapi.json"', body)
+        self.assertNotIn("/api/api/v1/openapi.json", body)
 
     @override_settings(FORCE_SCRIPT_NAME="/genomeproperties/api")
     def test_openapi_paths_do_not_repeat_api_under_script_prefix(self):
@@ -115,3 +118,12 @@ class OpenApiTests(SimpleTestCase):
         self.assertIn("/genomeproperties/api/v1/genome-properties", paths)
         self.assertNotIn("/genomeproperties/api/api/v1/health", paths)
         self.assertNotIn("/genomeproperties/api/api/v1/genome-properties", paths)
+
+    @override_settings(FORCE_SCRIPT_NAME="/genomeproperties/api")
+    def test_swagger_uses_relative_openapi_url(self):
+        for path in ("/api/v1/docs", "/genomeproperties/api/v1/docs"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200)
+            body = response.content.decode()
+            self.assertIn('"url": "openapi.json"', body)
+            self.assertNotIn("/genomeproperties/api/api/v1/openapi.json", body)

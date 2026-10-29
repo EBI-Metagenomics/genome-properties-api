@@ -1,11 +1,11 @@
 """Django settings for the Genome Properties REST API."""
 
 import logging
-
 from pathlib import Path
 
-from corsheaders.defaults import default_headers
 from decouple import Csv, config
+
+from genomeproperties.utils import HostAllowList
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,18 +16,10 @@ SECRET_KEY = config("DJANGO_SECRET_KEY", default="insecure-dev-key-change-me")
 DEBUG = config("DJANGO_DEBUG", default=True, cast=bool)
 
 
-def _extend_allowed_hosts(hosts, *extra):
-    allowed = list(hosts)
-    for host in extra:
-        if host and host not in allowed:
-            allowed.append(host)
-    return allowed
-
-
 # Public hostnames from env. Kubelet probes use the pod IP as HTTP Host, so
 # append POD_IP when the downward API provides it.
 _configured_hosts = config("DJANGO_ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
-ALLOWED_HOSTS = _extend_allowed_hosts(_configured_hosts, config("POD_IP", default=""))
+ALLOWED_HOSTS = HostAllowList.extend(_configured_hosts, config("POD_IP", default=""))
 
 FORCE_SCRIPT_NAME = config("DJANGO_FORCE_SCRIPT_NAME", default="") or None
 
@@ -68,8 +60,6 @@ if DEBUG:
     ]
 logger.info("ALLOWED_HOSTS: %s", ALLOWED_HOSTS)
 logger.info("CORS_ALLOWED_ORIGINS: %s", CORS_ALLOWED_ORIGINS)
-
-CORS_ALLOW_HEADERS = list(default_headers) + ["apollo-require-preflight"]
 
 ROOT_URLCONF = "genomeproperties.urls"
 WSGI_APPLICATION = "genomeproperties.wsgi.application"

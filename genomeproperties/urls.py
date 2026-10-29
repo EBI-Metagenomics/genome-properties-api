@@ -1,34 +1,25 @@
-from django.conf import settings
 from django.contrib import admin
 from django.urls import path
 
-from . import views
+from genomeproperties.api.app import api, prefixed_api, script_api
+from genomeproperties.api.v1.health import HealthAPI
+from genomeproperties.constants import ApiPath
+from genomeproperties.utils import ScriptPrefix
 
-
-def _rest_routes(prefix="", named=False):
-    root = f"{prefix}/" if prefix else ""
-    health_kwargs = {"name": "health"} if named else {}
-    return [
-        path(f"{root}health/", views.health, **health_kwargs),
-        path(f"{root}genome-properties/", views.list_genome_properties),
-        path(f"{root}genome-properties/<str:accession>/", views.genome_property_detail),
-        path(f"{root}hierarchy/<str:accession>/", views.hierarchy_detail),
-    ]
-
+health = HealthAPI().as_django_view()
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    *_rest_routes(named=True),
-    # Leftover VITE_API_URL values still end in /graphql/
-    *_rest_routes("graphql"),
+    path("health/", health, name="health"),
+    path(f"{ApiPath.ROOT}/", api.urls),
+    # FORCE_SCRIPT_NAME=/genomeproperties/api leaves PATH_INFO as /v1/...
+    path(f"{ApiPath.VERSION}/", script_api.urls),
 ]
 
-# NodePort has no ingress rewrite, so the public script prefix must be routed too.
-_prefixes = ["genomeproperties/api"]
-configured = (settings.FORCE_SCRIPT_NAME or "").strip("/")
-if configured and configured not in _prefixes:
-    _prefixes.append(configured)
-
-for prefix in _prefixes:
-    urlpatterns.extend(_rest_routes(prefix))
-    urlpatterns.extend(_rest_routes(f"{prefix}/graphql"))
+for prefix in ScriptPrefix.public_prefixes():
+    urlpatterns.extend(
+        [
+            path(f"{prefix}/health/", health),
+            path(f"{prefix}/{ApiPath.VERSION}/", prefixed_api.urls),
+        ]
+    )

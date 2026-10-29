@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Genome Properties REST API",
-    "description": "Smoke tests for GET {{baseUrl}}/health/, /genome-properties/, and /hierarchy/.\n\nImport this file in Postman: Import → Upload Files.\nStart the Django server first: uv run python manage.py runserver",
+    "description": "Smoke tests for GET {{baseUrl}}/health/ and /api/v1/* including Swagger/OpenAPI.\n\nImport this file in Postman: Import → Upload Files.\nStart the Django server first: uv run python manage.py runserver\nSwagger UI: {{baseUrl}}/api/v1/docs",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -24,102 +24,207 @@
   ],
   "item": [
     {
+      "name": "Docs",
+      "item": [
+        {
+          "name": "OpenAPI schema",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/openapi.json"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"OpenAPI 3\", () => pm.expect(json.openapi).to.match(/^3\\./));",
+                  "pm.test(\"Title\", () => pm.expect(json.info.title).to.eql(\"Genome Properties API\"));",
+                  "pm.test(\"Has genome-properties path\", () => pm.expect(json.paths).to.have.property(\"/api/v1/genome-properties\"));",
+                  "pm.test(\"Has hierarchy path\", () => pm.expect(json.paths).to.have.property(\"/api/v1/hierarchy/{accession}\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Swagger UI",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "text/html" }],
+            "url": "{{baseUrl}}/api/v1/docs"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Swagger UI\", () => pm.expect(pm.response.text()).to.match(/swagger/i));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Health",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/health/"
-      },
-      "event": [
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"status ok\", () => pm.expect(pm.response.json().status).to.eql(\"ok\"));"
-            ]
-          }
+          "name": "Liveness probe",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"status ok\", () => pm.expect(pm.response.json().status).to.eql(\"ok\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Versioned liveness",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"status ok\", () => pm.expect(pm.response.json().status).to.eql(\"ok\"));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "List by type",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/genome-properties/?type={{type}}"
-      },
-      "event": [
+      "name": "Genome properties",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "const json = pm.response.json();",
-              "pm.test(\"Array of properties\", () => pm.expect(json).to.be.an(\"array\"));",
-              "pm.test(\"Has accession\", () => pm.expect(json[0].accession).to.be.a(\"string\"));"
-            ]
-          }
+          "name": "List by type",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/genome-properties?type={{type}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Array of properties\", () => pm.expect(json).to.be.an(\"array\"));",
+                  "pm.test(\"Has accession\", () => pm.expect(json[0].accession).to.be.a(\"string\"));",
+                  "pm.test(\"Has description\", () => pm.expect(json[0].description).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Property detail",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/genome-properties/{{accession}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Accession matches\", () => pm.expect(json.accession).to.eql(pm.collectionVariables.get(\"accession\")));",
+                  "pm.test(\"Has steps\", () => pm.expect(json.steps).to.be.an(\"array\"));",
+                  "pm.test(\"Camel-case databaseLinks\", () => pm.expect(json).to.have.property(\"databaseLinks\"));",
+                  "pm.test(\"Has literature\", () => pm.expect(json.literature).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown property is 404",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/genome-properties/NOPE"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"detail\", () => pm.expect(pm.response.json().detail).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Property detail",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/genome-properties/{{accession}}/"
-      },
-      "event": [
+      "name": "Hierarchy",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "const json = pm.response.json();",
-              "pm.test(\"Accession matches\", () => pm.expect(json.accession).to.eql(pm.collectionVariables.get(\"accession\")));",
-              "pm.test(\"Has steps\", () => pm.expect(json.steps).to.be.an(\"array\"));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Hierarchy tree",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/hierarchy/{{hierarchyRoot}}/"
-      },
-      "event": [
+          "name": "Hierarchy tree",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/hierarchy/{{hierarchyRoot}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Root accession matches\", () => pm.expect(json.accession).to.eql(pm.collectionVariables.get(\"hierarchyRoot\")));",
+                  "pm.test(\"Has children array\", () => pm.expect(json.children).to.be.an(\"array\"));",
+                  "pm.test(\"Has description\", () => pm.expect(json.description).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        },
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "const json = pm.response.json();",
-              "pm.test(\"Root accession matches\", () => pm.expect(json.accession).to.eql(pm.collectionVariables.get(\"hierarchyRoot\")));",
-              "pm.test(\"Has children array\", () => pm.expect(json.children).to.be.an(\"array\"));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Unknown property is 404",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/genome-properties/NOPE/"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
-            ]
-          }
+          "name": "Unknown hierarchy is 404",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/hierarchy/NOPE"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

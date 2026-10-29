@@ -1,6 +1,6 @@
 # Genome Properties API
 
-REST API for the Genome Properties resource. The service is a Django 5.2 application on Python 3.12+, backed by SQLite.
+REST API for the Genome Properties resource. The service is a Django 5.2 application on Python 3.12+, backed by SQLite. Endpoints are Django Ninja controllers over Pydantic schemas, with OpenAPI/Swagger.
 
 ## Local setup
 
@@ -13,13 +13,17 @@ uv run python manage.py runserver
 
 Use `uv run` (Python 3.12+) so Django loads from `.venv`. A conda or system `python manage.py` will miss packages such as `python-decouple`.
 
-A liveness probe is at `/health/`. The UI uses three JSON endpoints:
-
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/genome-properties/?type=PATHWAY` | List properties of one type |
-| `GET` | `/genome-properties/<accession>/` | Property detail (literature, links, steps) |
-| `GET` | `/hierarchy/<accession>/` | Child-property tree |
+| `GET` | `/health/` | Liveness probe |
+| `GET` | `/api/v1/health` | Versioned liveness (documented) |
+| `GET` | `/api/v1/genome-properties?type=PATHWAY` | List properties of one type |
+| `GET` | `/api/v1/genome-properties/{accession}` | Property detail (literature, links, steps) |
+| `GET` | `/api/v1/hierarchy/{accession}` | Child-property tree |
+| `GET` | `/api/v1/docs` | Swagger UI |
+| `GET` | `/api/v1/openapi.json` | OpenAPI 3 schema |
+
+Under Kubernetes the same routes are also served with the script prefix `/genomeproperties/api/` (for example `/genomeproperties/api/v1/docs`).
 
 The SQLite file is not stored in git. Place it at `genome_properties.db` in the project root, or set `DATABASE_PATH`.
 

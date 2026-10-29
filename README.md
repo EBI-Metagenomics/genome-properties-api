@@ -1,6 +1,6 @@
 # Genome Properties API
 
-GraphQL API for the Genome Properties resource. The service is a Django 5.2 application on Python 3.12+, backed by SQLite.
+REST API for the Genome Properties resource. The service is a Django 5.2 application on Python 3.12+, backed by SQLite.
 
 ## Local setup
 
@@ -13,7 +13,13 @@ uv run python manage.py runserver
 
 Use `uv run` (Python 3.12+) so Django loads from `.venv`. A conda or system `python manage.py` will miss packages such as `python-decouple`.
 
-GraphiQL is available at [http://127.0.0.1:8000/graphql/](http://127.0.0.1:8000/graphql/). A liveness probe is at `/health/`.
+A liveness probe is at `/health/`. The UI uses three JSON endpoints:
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/genome-properties/?type=PATHWAY` | List properties of one type |
+| `GET` | `/genome-properties/<accession>/` | Property detail (literature, links, steps) |
+| `GET` | `/hierarchy/<accession>/` | Child-property tree |
 
 The SQLite file is not stored in git. Place it at `genome_properties.db` in the project root, or set `DATABASE_PATH`.
 
@@ -22,7 +28,7 @@ The SQLite file is not stored in git. Place it at `genome_properties.db` in the 
 | Variable | Default | Purpose |
 |---|---|---|
 | `DJANGO_SECRET_KEY` | insecure dev key | Django secret |
-| `DJANGO_DEBUG` | `true` | Debug / GraphiQL extras |
+| `DJANGO_DEBUG` | `true` | Debug |
 | `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` | Host allow-list |
 | `POD_IP` | empty | Pod IP from the K8s downward API; appended to `ALLOWED_HOSTS` for kubelet probes |
 | `DJANGO_FORCE_SCRIPT_NAME` | empty | Sub-path, e.g. `/genomeproperties/api` |

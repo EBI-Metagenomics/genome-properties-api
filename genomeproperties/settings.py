@@ -1,4 +1,4 @@
-"""Django settings for the Genome Properties GraphQL API."""
+"""Django settings for the Genome Properties REST API."""
 
 import logging
 
@@ -39,8 +39,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
-    "django_filters",
-    "graphene_django",
     "genomeproperties.apps.GenomePropertiesConfig",
 ]
 
@@ -138,12 +136,3 @@ WHITENOISE_USE_FINDERS = DEBUG
 WHITENOISE_AUTOREFRESH = DEBUG
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
-
-GRAPHENE = {
-    "SCHEMA": "genomeproperties.schema.schema",
-}
-
-if DEBUG:
-    GRAPHENE["MIDDLEWARE"] = ["graphene_django.debug.DjangoDebugMiddleware"]
-
-from genomeproperties import static_handler as _static_handler  # noqa: E402,F401

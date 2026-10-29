@@ -1,16 +1,26 @@
 from django.conf import settings
 from django.contrib import admin
 from django.urls import path
-from django.views.decorators.csrf import csrf_exempt
-from graphene_django.views import GraphQLView
 
-from .views import health
+from . import views
 
-# Unprefixed routes: kubelet /health/ and local /graphql/.
+
+def _rest_routes(prefix="", named=False):
+    root = f"{prefix}/" if prefix else ""
+    health_kwargs = {"name": "health"} if named else {}
+    return [
+        path(f"{root}health/", views.health, **health_kwargs),
+        path(f"{root}genome-properties/", views.list_genome_properties),
+        path(f"{root}genome-properties/<str:accession>/", views.genome_property_detail),
+        path(f"{root}hierarchy/<str:accession>/", views.hierarchy_detail),
+    ]
+
+
 urlpatterns = [
-    path("health/", health, name="health"),
     path("admin/", admin.site.urls),
-    path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
+    *_rest_routes(named=True),
+    # Leftover VITE_API_URL values still end in /graphql/
+    *_rest_routes("graphql"),
 ]
 
 # NodePort has no ingress rewrite, so the public script prefix must be routed too.
@@ -20,9 +30,5 @@ if configured and configured not in _prefixes:
     _prefixes.append(configured)
 
 for prefix in _prefixes:
-    urlpatterns.extend(
-        [
-            path(f"{prefix}/health/", health),
-            path(f"{prefix}/graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
-        ]
-    )
+    urlpatterns.extend(_rest_routes(prefix))
+    urlpatterns.extend(_rest_routes(f"{prefix}/graphql"))

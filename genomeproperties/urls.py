@@ -1,25 +1,25 @@
-"""genomeproperties URL Configuration
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/3.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path
-from django.views.decorators.csrf import csrf_exempt
 
-from graphene_django.views import GraphQLView
+from genomeproperties.api.app import api, prefixed_api, script_api
+from genomeproperties.api.v1.health import HealthAPI
+from genomeproperties.constants import ApiPath
+from genomeproperties.utils import ScriptPrefix
+
+health = HealthAPI().as_django_view()
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True))),
+    path("admin/", admin.site.urls),
+    path("health/", health, name="health"),
+    path(f"{ApiPath.ROOT}/", api.urls),
+    # FORCE_SCRIPT_NAME=/genomeproperties/api leaves PATH_INFO as /v1/...
+    path(f"{ApiPath.VERSION}/", script_api.urls),
 ]
+
+for prefix in ScriptPrefix.public_prefixes():
+    urlpatterns.extend(
+        [
+            path(f"{prefix}/health/", health),
+            path(f"{prefix}/{ApiPath.VERSION}/", prefixed_api.urls),
+        ]
+    )

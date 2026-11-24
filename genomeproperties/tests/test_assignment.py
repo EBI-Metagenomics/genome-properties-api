@@ -4,31 +4,25 @@ from unittest.mock import patch
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase
 
+from genomeproperties.constants import AssignmentMode, AssignmentResult, PropertyType
+from genomeproperties.schemas import AssignmentProperty, AssignmentStep, Evidence
 from genomeproperties.services.assignment import (
-    NO,
-    PARTIAL,
-    YES,
     AssignError,
     AssignmentService,
-    Evidence,
-    PropertyDef,
-    StepDef,
-    assign_properties,
-    parse_matches,
-    to_viewer_json,
+    InterProMatchParser,
 )
 
 MD5 = "a" * 32
 
 
-def _graph() -> dict[str, PropertyDef]:
-    child = PropertyDef(
+def _graph() -> dict[str, AssignmentProperty]:
+    child = AssignmentProperty(
         accession="GenProp0002",
         name="Child",
         type="PATHWAY",
         threshold=0,
         steps=[
-            StepDef(
+            AssignmentStep(
                 number=1,
                 name="child-step",
                 required=True,
@@ -42,13 +36,13 @@ def _graph() -> dict[str, PropertyDef]:
             )
         ],
     )
-    parent = PropertyDef(
+    parent = AssignmentProperty(
         accession="GenProp0001",
         name="Parent",
         type="PATHWAY",
         threshold=0,
         steps=[
-            StepDef(
+            AssignmentStep(
                 number=1,
                 name="signature-step",
                 required=True,
@@ -60,7 +54,7 @@ def _graph() -> dict[str, PropertyDef]:
                     )
                 ],
             ),
-            StepDef(
+            AssignmentStep(
                 number=2,
                 name="sufficient-step",
                 required=True,
@@ -77,7 +71,7 @@ def _graph() -> dict[str, PropertyDef]:
                     ),
                 ],
             ),
-            StepDef(
+            AssignmentStep(
                 number=3,
                 name="child-step",
                 required=True,
@@ -85,10 +79,10 @@ def _graph() -> dict[str, PropertyDef]:
             ),
         ],
     )
-    skipped = PropertyDef(
+    skipped = AssignmentProperty(
         accession="GenProp0099",
         name="Category",
-        type="CATEGORY",
+        type=PropertyType.CATEGORY,
         threshold=0,
         steps=[],
     )
@@ -120,70 +114,73 @@ def _scan_line(signature: str) -> str:
 
 
 class ParseMatchesTests(SimpleTestCase):
+    def setUp(self):
+        self.parser = InterProMatchParser()
+
     def test_interproscan_uses_signature_column(self):
-        parsed = parse_matches(_scan_line("PF00001") + "\n" + _scan_line("PTHR12345:SF1"))
-        self.assertEqual(parsed.mode, "signatures")
+        parsed = self.parser.parse(_scan_line("PF00001") + "\n" + _scan_line("PTHR12345:SF1"))
+        self.assertEqual(parsed.mode, AssignmentMode.SIGNATURES)
         self.assertIn("PF00001", parsed.tokens)
         self.assertIn("PTHR12345:SF1", parsed.tokens)
         self.assertIn("PTHR12345", parsed.tokens)
 
     def test_entries_matching_uses_ipr_accessions(self):
         text = "Accession\tName\nIPR000001\tKringle\nnot-an-ipr\tSkip\n"
-        parsed = parse_matches(text)
-        self.assertEqual(parsed.mode, "entries")
+        parsed = self.parser.parse(text)
+        self.assertEqual(parsed.mode, AssignmentMode.ENTRIES)
         self.assertEqual(parsed.tokens, {"IPR000001"})
 
     def test_headerless_ipr_export_is_entries(self):
-        parsed = parse_matches("IPR000001\tKringle\tInterPro\n")
-        self.assertEqual(parsed.mode, "entries")
+        parsed = self.parser.parse("IPR000001\tKringle\tInterPro\n")
+        self.assertEqual(parsed.mode, AssignmentMode.ENTRIES)
         self.assertEqual(parsed.tokens, {"IPR000001"})
 
     def test_unknown_format_is_rejected(self):
         with self.assertRaises(AssignError):
-            parse_matches("GenProp0001\tName\tYES\n")
+            self.parser.parse("GenProp0001\tName\tYES\n")
 
 
 class EvaluationTests(SimpleTestCase):
+    def setUp(self):
+        self.service = AssignmentService(graph=_graph())
+
+    def _assign(self, text: str, organism: str = "demo") -> dict:
+        return self.service.assign_text(text, organism)
+
     def test_interproscan_yes_when_required_steps_and_child_hit(self):
-        parsed = parse_matches(
+        payload = self._assign(
             "\n".join([_scan_line("PF00001"), _scan_line("PF00010"), _scan_line("PF00002")])
         )
-        assigned = assign_properties(_graph(), parsed)
-        self.assertEqual(assigned["GenProp0001"][0], YES)
-        self.assertEqual(assigned["GenProp0002"][0], YES)
-        self.assertNotIn("GenProp0099", assigned)
+        self.assertEqual(payload["GenProp0001"]["values"]["demo"], AssignmentResult.YES)
+        self.assertEqual(payload["GenProp0002"]["values"]["demo"], AssignmentResult.YES)
+        self.assertNotIn("GenProp0099", payload)
 
     def test_partial_when_some_required_steps_hit(self):
-        parsed = parse_matches(_scan_line("PF00001"))
-        assigned = assign_properties(_graph(), parsed)
-        self.assertEqual(assigned["GenProp0001"][0], PARTIAL)
-        self.assertEqual(assigned["GenProp0002"][0], NO)
+        payload = self._assign(_scan_line("PF00001"))
+        self.assertEqual(payload["GenProp0001"]["values"]["demo"], AssignmentResult.PARTIAL)
+        self.assertEqual(payload["GenProp0002"]["values"]["demo"], AssignmentResult.NO)
 
     def test_sufficient_evidence_satisfies_the_step(self):
-        parsed = parse_matches(
+        payload = self._assign(
             "\n".join([_scan_line("PF00001"), _scan_line("PF00010"), _scan_line("PF00002")])
         )
-        steps = assign_properties(_graph(), parsed)["GenProp0001"][1]
-        hits = {step.number: found for step, found in steps}
+        hits = {step["step"]: step["values"]["demo"] for step in payload["GenProp0001"]["steps"]}
         self.assertTrue(hits[2])
 
     def test_entries_mode_matches_interpro_accessions(self):
-        parsed = parse_matches("Accession\tName\nIPR000001\tA\nIPR000010\tB\nIPR000002\tC\n")
-        assigned = assign_properties(_graph(), parsed)
-        self.assertEqual(assigned["GenProp0001"][0], YES)
+        payload = self._assign("Accession\tName\nIPR000001\tA\nIPR000010\tB\nIPR000002\tC\n")
+        self.assertEqual(payload["GenProp0001"]["values"]["demo"], AssignmentResult.YES)
 
     def test_viewer_json_uses_filename_as_column(self):
-        parsed = parse_matches(_scan_line("PF00001"))
-        graph = _graph()
-        payload = to_viewer_json(graph, assign_properties(graph, parsed), "demo")
-        self.assertEqual(payload["GenProp0001"]["values"]["demo"], PARTIAL)
-        self.assertEqual(payload["GenProp0001"]["values"]["TOTAL"][PARTIAL], 1)
+        payload = self._assign(_scan_line("PF00001"))
+        self.assertEqual(payload["GenProp0001"]["values"]["demo"], AssignmentResult.PARTIAL)
+        self.assertEqual(payload["GenProp0001"]["values"]["TOTAL"][AssignmentResult.PARTIAL], 1)
         self.assertNotIn("GenProp0099", payload)
 
     def test_service_assigns_from_gzipped_bytes(self):
         raw = gzip.compress(_scan_line("PF00001").encode())
-        payload = AssignmentService(graph=_graph()).assign_bytes(raw, "demo.tsv.gz")
-        self.assertEqual(payload["GenProp0001"]["values"]["demo"], PARTIAL)
+        payload = self.service.assign_bytes(raw, "demo.tsv.gz")
+        self.assertEqual(payload["GenProp0001"]["values"]["demo"], AssignmentResult.PARTIAL)
 
 
 class AssignApiTests(SimpleTestCase):
@@ -192,7 +189,14 @@ class AssignApiTests(SimpleTestCase):
             "GenProp0001": {
                 "property": "GenProp0001",
                 "name": "Parent",
-                "values": {"demo": YES, "TOTAL": {YES: 1, PARTIAL: 0, NO: 0}},
+                "values": {
+                    "demo": AssignmentResult.YES,
+                    "TOTAL": {
+                        AssignmentResult.YES: 1,
+                        AssignmentResult.PARTIAL: 0,
+                        AssignmentResult.NO: 0,
+                    },
+                },
                 "steps": [],
             }
         }
@@ -205,14 +209,21 @@ class AssignApiTests(SimpleTestCase):
                 {"ipproname": "demo.tsv", "ipprotsv": _scan_line("PF00001")},
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["GenProp0001"]["values"]["demo"], YES)
+        self.assertEqual(response.json()["GenProp0001"]["values"]["demo"], AssignmentResult.YES)
 
     def test_multipart_file_is_accepted(self):
         payload = {
             "GenProp0001": {
                 "property": "GenProp0001",
                 "name": "Parent",
-                "values": {"sara": PARTIAL, "TOTAL": {YES: 0, PARTIAL: 1, NO: 0}},
+                "values": {
+                    "sara": AssignmentResult.PARTIAL,
+                    "TOTAL": {
+                        AssignmentResult.YES: 0,
+                        AssignmentResult.PARTIAL: 1,
+                        AssignmentResult.NO: 0,
+                    },
+                },
                 "steps": [],
             }
         }
@@ -230,14 +241,21 @@ class AssignApiTests(SimpleTestCase):
                 {"ipproname": "sara.tsv", "file": upload},
             )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["GenProp0001"]["values"]["sara"], PARTIAL)
+        self.assertEqual(response.json()["GenProp0001"]["values"]["sara"], AssignmentResult.PARTIAL)
 
     def test_gzipped_file_is_accepted(self):
         payload = {
             "GenProp0001": {
                 "property": "GenProp0001",
                 "name": "Parent",
-                "values": {"demo": PARTIAL, "TOTAL": {YES: 0, PARTIAL: 1, NO: 0}},
+                "values": {
+                    "demo": AssignmentResult.PARTIAL,
+                    "TOTAL": {
+                        AssignmentResult.YES: 0,
+                        AssignmentResult.PARTIAL: 1,
+                        AssignmentResult.NO: 0,
+                    },
+                },
                 "steps": [],
             }
         }

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from decouple import Csv, config
 
+from genomeproperties.constants import UploadLimit
 from genomeproperties.utils import HostAllowList
 
 logging.basicConfig(level=logging.INFO)
@@ -127,6 +128,6 @@ WHITENOISE_AUTOREFRESH = DEBUG
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
-# Viewer uploads InterProScan TSV (often tens of MB). Keep in memory up to 50 MB.
-DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
-FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024
+# Viewer uploads InterProScan TSV (often tens of MB). Same cap as assignment decoding.
+DATA_UPLOAD_MAX_MEMORY_SIZE = UploadLimit.MAX_BYTES
+FILE_UPLOAD_MAX_MEMORY_SIZE = UploadLimit.MAX_BYTES

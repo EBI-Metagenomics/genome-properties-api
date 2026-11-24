@@ -1,7 +1,7 @@
 from ninja import File, Form, NinjaAPI, Router, UploadedFile
 from ninja.errors import HttpError
 
-from genomeproperties.constants import ErrorMessage, OpenApiTag
+from genomeproperties.constants import ErrorMessage, OpenApiTag, UploadLimit
 from genomeproperties.schemas import ErrorSchema
 from genomeproperties.services.assignment import AssignError, AssignmentService
 
@@ -26,12 +26,10 @@ class AssignAPI:
         def assign(
             request,
             file: UploadedFile = File(None, description="TSV or gzipped TSV"),
-            ipproname: str = Form(
-                "", description="Heatmap column label, usually the file name"
-            ),
+            ipproname: str = Form("", description="Heatmap column label, usually the file name"),
             ipprotsv: str = Form("", description="TSV text if not sending a file"),
         ) -> dict:
-            raw, name = _read_upload(request, file, ipproname, ipprotsv)
+            raw, name = self._read_upload(request, file, ipproname, ipprotsv)
             try:
                 return service.assign_bytes(raw, name)
             except AssignError as exc:
@@ -39,19 +37,20 @@ class AssignAPI:
 
         api.add_router("", router)
 
-
-def _read_upload(
-    request,
-    file: UploadedFile | None,
-    ipproname: str,
-    ipprotsv: str,
-) -> tuple[bytes, str]:
-    name = (ipproname or "").strip()
-    if file is not None:
-        return file.read(), name or (file.name or "upload")
-    if ipprotsv:
-        return ipprotsv.encode("utf-8"), name or "upload"
-    uploaded = request.FILES.get("file") or request.FILES.get("ipprotsv")
-    if uploaded is not None:
-        return uploaded.read(), name or (uploaded.name or "upload")
-    raise HttpError(400, ErrorMessage.ASSIGN_EMPTY)
+    @staticmethod
+    def _read_upload(
+        request,
+        file: UploadedFile | None,
+        ipproname: str,
+        ipprotsv: str,
+    ) -> tuple[bytes, str]:
+        name = (ipproname or "").strip()
+        fallback = UploadLimit.DEFAULT_ORGANISM
+        if file is not None:
+            return file.read(), name or (file.name or fallback)
+        if ipprotsv:
+            return ipprotsv.encode("utf-8"), name or fallback
+        uploaded = request.FILES.get("file") or request.FILES.get("ipprotsv")
+        if uploaded is not None:
+            return uploaded.read(), name or (uploaded.name or fallback)
+        raise HttpError(400, ErrorMessage.ASSIGN_EMPTY)

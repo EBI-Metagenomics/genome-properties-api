@@ -30,8 +30,8 @@ jobs:
       - name: Build the Django Docker image (Dev)
         run: |
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/genome-properties-api:${{ env.IMAGE_TAG }} \
-            --build-arg DJANGO_FORCE_SCRIPT_NAME=/genomeproperties/api \
-            --build-arg DJANGO_STATIC_URL=/genomeproperties/api/static/ \
+            --build-arg DJANGO_FORCE_SCRIPT_NAME=/interpro/genomeproperties/api \
+            --build-arg DJANGO_STATIC_URL=/interpro/genomeproperties/api/static/ \
             -f ./Dockerfile .
 
       - name: Push the Django Docker image (Dev)

@@ -20,8 +20,11 @@ Use `uv run` (Python 3.12+) so Django loads from `.venv`. A conda or system `pyt
 | `GET` | `/api/v1/genome-properties?type=PATHWAY` | List properties of one type |
 | `GET` | `/api/v1/genome-properties/{accession}` | Property detail (literature, links, steps) |
 | `GET` | `/api/v1/hierarchy/{accession}` | Child-property tree |
+| `POST` | `/api/v1/assign` | Assign YES/PARTIAL/NO from InterProScan TSV or InterPro entries TSV |
 | `GET` | `/api/v1/docs` | Swagger UI |
 | `GET` | `/api/v1/openapi.json` | OpenAPI 3 schema |
+
+`POST /api/v1/assign` accepts `multipart/form-data` (`file` plus optional `ipproname`) or the older urlencoded `ipproname`/`ipprotsv` fields. The body must be InterProScan TSV (`interproscan.sh -f tsv`) or an InterPro proteome “Entries matching” TSV. Unknown formats return 400 — they are not parsed as Genome Properties summary files.
 
 Under Kubernetes the same routes are also served with the script prefix `/genomeproperties/api/` (for example `/genomeproperties/api/v1/docs`).
 

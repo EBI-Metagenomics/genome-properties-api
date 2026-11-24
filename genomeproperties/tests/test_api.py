@@ -100,6 +100,7 @@ class OpenApiTests(SimpleTestCase):
         self.assertIn("/api/v1/genome-properties", paths)
         self.assertIn("/api/v1/genome-properties/{accession}", paths)
         self.assertIn("/api/v1/hierarchy/{accession}", paths)
+        self.assertIn("/api/v1/assign", paths)
 
     def test_swagger_ui_is_published(self):
         response = self.client.get("/api/v1/docs")
@@ -116,6 +117,7 @@ class OpenApiTests(SimpleTestCase):
         paths = response.json()["paths"]
         self.assertIn("/genomeproperties/api/v1/health", paths)
         self.assertIn("/genomeproperties/api/v1/genome-properties", paths)
+        self.assertIn("/genomeproperties/api/v1/assign", paths)
         self.assertNotIn("/genomeproperties/api/api/v1/health", paths)
         self.assertNotIn("/genomeproperties/api/api/v1/genome-properties", paths)
 

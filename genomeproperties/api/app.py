@@ -1,6 +1,7 @@
 from ninja import NinjaAPI
 
 from genomeproperties.api.docs import RequestRelativeSwagger
+from genomeproperties.api.v1.assign import AssignAPI
 from genomeproperties.api.v1.genome_properties import GenomePropertyAPI
 from genomeproperties.api.v1.health import HealthAPI
 from genomeproperties.api.v1.hierarchy import HierarchyAPI
@@ -28,6 +29,7 @@ class ApiFactory:
         HealthAPI().register(api)
         GenomePropertyAPI().register(api)
         HierarchyAPI().register(api)
+        AssignAPI().register(api)
         return api
 
 

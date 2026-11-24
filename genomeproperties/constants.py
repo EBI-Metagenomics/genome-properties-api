@@ -18,9 +18,14 @@ class HealthStatus:
 
 class ErrorMessage:
     NOT_FOUND = "Not found"
+    ASSIGN_EMPTY = (
+        "Upload an InterProScan TSV or an InterPro entry export "
+        "(file field or ipprotsv)."
+    )
 
 
 class OpenApiTag:
     HEALTH = "Health"
     GENOME_PROPERTIES = "Genome properties"
     HIERARCHY = "Hierarchy"
+    ASSIGNMENT = "Assignment"

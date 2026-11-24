@@ -29,12 +29,20 @@ class ScriptPrefix:
         return prefixes
 
     @classmethod
+    def published(cls) -> str:
+        return (getattr(settings, "PUBLIC_SCRIPT_NAME", None) or "").strip("/")
+
+    @classmethod
     def openapi_root(cls) -> str:
         """Public prefix Ninja prepends to operation paths.
 
-        FORCE_SCRIPT_NAME already includes ``/api``, so OpenAPI must mount at
-        ``/v1`` under that script name, not ``/api/v1``.
+        The script name already includes ``/api``, so OpenAPI must mount at
+        ``/v1`` under that prefix, not ``/api/v1``. PUBLIC_SCRIPT_NAME wins
+        when ingress exposes a longer browser path than FORCE_SCRIPT_NAME.
         """
+        published = cls.published()
+        if published:
+            return f"{published}/{ApiPath.VERSION}"
         configured = cls.configured()
         if configured:
             return f"{configured}/{ApiPath.VERSION}"

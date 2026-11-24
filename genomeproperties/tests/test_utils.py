@@ -42,3 +42,13 @@ class ScriptPrefixTests(SimpleTestCase):
     def test_openapi_root_does_not_repeat_api_under_script_name(self):
         with override_settings(FORCE_SCRIPT_NAME="/genomeproperties/api"):
             self.assertEqual(ScriptPrefix.openapi_root(), "genomeproperties/api/v1")
+
+    def test_openapi_root_uses_public_script_name_when_set(self):
+        with override_settings(
+            FORCE_SCRIPT_NAME="/genomeproperties/api",
+            PUBLIC_SCRIPT_NAME="/interpro/genomeproperties/api",
+        ):
+            self.assertEqual(
+                ScriptPrefix.openapi_root(),
+                "interpro/genomeproperties/api/v1",
+            )

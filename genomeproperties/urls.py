@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path
 
-from genomeproperties.api.app import api, prefixed_api, script_api
+from genomeproperties.api.app import api, create_api, script_api
 from genomeproperties.api.v1.health import HealthAPI
 from genomeproperties.constants import ApiPath
 from genomeproperties.utils import ScriptPrefix
@@ -16,10 +16,15 @@ urlpatterns = [
     path(f"{ApiPath.VERSION}/", script_api.urls),
 ]
 
-for prefix in ScriptPrefix.public_prefixes():
+# One NinjaAPI per prefix. Reusing a single instance registers its namespace
+# twice and Django Ninja refuses to start when FORCE_SCRIPT_NAME adds a prefix.
+for index, prefix in enumerate(ScriptPrefix.public_prefixes()):
     urlpatterns.extend(
         [
             path(f"{prefix}/health/", health),
-            path(f"{prefix}/{ApiPath.VERSION}/", prefixed_api.urls),
+            path(
+                f"{prefix}/{ApiPath.VERSION}/",
+                create_api(f"gp-api-public-{index}").urls,
+            ),
         ]
     )

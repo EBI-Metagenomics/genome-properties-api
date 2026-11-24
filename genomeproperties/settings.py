@@ -23,6 +23,9 @@ _configured_hosts = config("DJANGO_ALLOWED_HOSTS", default="localhost,127.0.0.1"
 ALLOWED_HOSTS = HostAllowList.extend(_configured_hosts, config("POD_IP", default=""))
 
 FORCE_SCRIPT_NAME = config("DJANGO_FORCE_SCRIPT_NAME", default="") or None
+# Browser path when the ingress strips a site prefix this process does not mount.
+# OpenAPI advertises it; request routing stays on FORCE_SCRIPT_NAME.
+PUBLIC_SCRIPT_NAME = config("DJANGO_PUBLIC_SCRIPT_NAME", default="") or None
 
 INSTALLED_APPS = [
     "django.contrib.admin",

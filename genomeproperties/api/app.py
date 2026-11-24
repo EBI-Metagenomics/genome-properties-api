@@ -39,4 +39,3 @@ def create_api(urls_namespace: str = "gp-api") -> NinjaAPI:
 
 api = create_api("gp-api")
 script_api = create_api("gp-api-script")
-prefixed_api = create_api("gp-api-prefixed")

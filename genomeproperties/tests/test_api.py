@@ -121,6 +121,19 @@ class OpenApiTests(SimpleTestCase):
         self.assertNotIn("/genomeproperties/api/api/v1/health", paths)
         self.assertNotIn("/genomeproperties/api/api/v1/genome-properties", paths)
 
+    @override_settings(
+        FORCE_SCRIPT_NAME="/genomeproperties/api",
+        PUBLIC_SCRIPT_NAME="/interpro/genomeproperties/api",
+    )
+    def test_openapi_advertises_the_browser_path(self):
+        response = self.client.get("/genomeproperties/api/v1/openapi.json")
+        self.assertEqual(response.status_code, 200)
+        paths = response.json()["paths"]
+        self.assertIn("/interpro/genomeproperties/api/v1/health", paths)
+        self.assertIn("/interpro/genomeproperties/api/v1/assign", paths)
+        self.assertNotIn("/genomeproperties/api/v1/health", paths)
+        self.assertNotIn("/interpro/genomeproperties/api/api/v1/health", paths)
+
     @override_settings(FORCE_SCRIPT_NAME="/genomeproperties/api")
     def test_swagger_uses_relative_openapi_url(self):
         for path in ("/api/v1/docs", "/genomeproperties/api/v1/docs"):

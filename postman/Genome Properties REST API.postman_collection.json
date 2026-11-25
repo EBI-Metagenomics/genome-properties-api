@@ -1,0 +1,1410 @@
+{
+  "info": {
+    "_postman_id": "760e171f-6d75-46e8-a538-18599eecb720",
+    "name": "Genome Properties REST API",
+    "description": "Smoke tests for the Genome Properties REST API.\n\nLocal Django (uv run python manage.py runserver):\n- baseUrl = http://127.0.0.1:8000\n- apiRoot = api/v1\n- healthPath = health/\n\nDev ingress (https://wwwdev.ebi.ac.uk):\n- baseUrl = https://wwwdev.ebi.ac.uk\n- apiRoot = interpro/genomeproperties/api/v1\n- healthPath = interpro/genomeproperties/api/health/\n\nAssignment success calls need DATABASE_PATH pointing at genome_properties.db. Empty and unknown-format assignment calls do not.\nThe multipart file request resolves postman/fixtures/interpro-entries.tsv from the repository root.\nSwagger UI: {{baseUrl}}/{{apiRoot}}/docs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "19420352"
+  },
+  "item": [
+    {
+      "name": "Docs",
+      "item": [
+        {
+          "name": "OpenAPI schema",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON content type\", () => {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.match(/application\\/json/);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "const paths = Object.keys(json.paths);",
+                  "pm.test(\"OpenAPI 3\", () => pm.expect(json.openapi).to.match(/^3\\./));",
+                  "pm.test(\"Title\", () => pm.expect(json.info.title).to.eql(\"Genome Properties API\"));",
+                  "pm.test(\"Version\", () => pm.expect(json.info.version).to.eql(\"1.0.0\"));",
+                  "pm.test(\"Versioned paths\", () => pm.expect(paths.every((path) => path.includes(\"/v1/\"))).to.eql(true));",
+                  "function hasPathEnding(suffix) {",
+                  "    return paths.some((path) => path.endsWith(suffix));",
+                  "}",
+                  "pm.test(\"Has health path\", () => pm.expect(hasPathEnding(\"/health\")).to.eql(true));",
+                  "pm.test(\"Has genome-properties path\", () => pm.expect(hasPathEnding(\"/genome-properties\")).to.eql(true));",
+                  "pm.test(\"Has property detail path\", () => pm.expect(hasPathEnding(\"/genome-properties/{accession}\")).to.eql(true));",
+                  "pm.test(\"Has hierarchy path\", () => pm.expect(hasPathEnding(\"/hierarchy/{accession}\")).to.eql(true));",
+                  "pm.test(\"Has assign path\", () => pm.expect(hasPathEnding(\"/assign\")).to.eql(true));",
+                  "pm.test(\"Assign is POST\", () => {",
+                  "    const assignPath = paths.find((path) => path.endsWith(\"/assign\"));",
+                  "    pm.expect(json.paths[assignPath]).to.have.property(\"post\");",
+                  "    pm.expect(json.paths[assignPath]).to.not.have.property(\"get\");",
+                  "});",
+                  "pm.test(\"Property list is GET\", () => {",
+                  "    const listPath = paths.find((path) => path.endsWith(\"/genome-properties\"));",
+                  "    pm.expect(json.paths[listPath]).to.have.property(\"get\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/openapi.json",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "openapi.json"
+              ]
+            },
+            "description": "OpenAPI 3 document for the versioned API."
+          },
+          "response": []
+        },
+        {
+          "name": "Swagger UI",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"HTML content type\", () => {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.match(/text\\/html/);",
+                  "});",
+                  "const body = pm.response.text();",
+                  "pm.test(\"Swagger UI\", () => pm.expect(body).to.match(/swagger/i));",
+                  "pm.test(\"Relative OpenAPI URL\", () => pm.expect(body).to.include('\"url\": \"openapi.json\"'));",
+                  "pm.test(\"Does not double the api prefix\", () => pm.expect(body).to.not.include(\"/api/api/v1/openapi.json\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/html"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/docs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "docs"
+              ]
+            },
+            "description": "Swagger UI HTML. The OpenAPI URL in the page is relative."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Liveness probe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));\npm.test(\"JSON content type\", () => {\n    pm.expect(pm.response.headers.get(\"Content-Type\")).to.match(/application\\/json/);\n});\npm.test(\"status ok\", () => pm.expect(pm.response.json()).to.eql({ status: \"ok\" }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{healthPath}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "{{healthPath}}"
+              ]
+            },
+            "description": "Unversioned liveness probe. On dev, set healthPath to interpro/genomeproperties/api/health/."
+          },
+          "response": []
+        },
+        {
+          "name": "Versioned liveness",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON content type\", () => {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.match(/application\\/json/);",
+                  "});",
+                  "pm.test(\"status ok\", () => pm.expect(pm.response.json()).to.eql({ status: \"ok\" }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "health"
+              ]
+            },
+            "description": "Documented liveness probe under the versioned API."
+          },
+          "response": []
+        },
+        {
+          "name": "Versioned liveness rejects POST",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 405\", () => pm.response.to.have.status(405));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "health"
+              ]
+            },
+            "description": "The versioned health route is GET only."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Genome properties",
+      "item": [
+        {
+          "name": "List by type",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON content type\", () => {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.match(/application\\/json/);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Array of properties\", () => pm.expect(json).to.be.an(\"array\").that.is.not.empty);",
+                  "pm.test(\"Summary fields only\", () => pm.expect(json[0]).to.have.keys(\"accession\", \"description\"));",
+                  "pm.test(\"Accession shape\", () => pm.expect(json[0].accession).to.match(/^GenProp\\d+$/));",
+                  "pm.test(\"Description is text\", () => pm.expect(json[0].description).to.be.a(\"string\").that.is.not.empty);",
+                  "pm.test(\"Unique accessions\", () => {",
+                  "    const ids = json.map((row) => row.accession);",
+                  "    pm.expect(new Set(ids).size).to.eql(ids.length);",
+                  "});",
+                  "pm.collectionVariables.set(\"pathwayCount\", String(json.length));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/genome-properties?type={{type}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "genome-properties"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "{{type}}"
+                }
+              ]
+            },
+            "description": "Properties whose type is PATHWAY. Saves the count for the unfiltered list check."
+          },
+          "response": []
+        },
+        {
+          "name": "List categories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Array of categories\", () => pm.expect(json).to.be.an(\"array\").that.is.not.empty);",
+                  "pm.test(\"Summary fields only\", () => pm.expect(json[0]).to.have.keys(\"accession\", \"description\"));",
+                  "pm.test(\"Accession shape\", () => pm.expect(json[0].accession).to.match(/^GenProp\\d+$/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/genome-properties?type={{categoryType}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "genome-properties"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "{{categoryType}}"
+                }
+              ]
+            },
+            "description": "Properties whose type is CATEGORY."
+          },
+          "response": []
+        },
+        {
+          "name": "List every property",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Array of properties\", () => pm.expect(json).to.be.an(\"array\").that.is.not.empty);",
+                  "pm.test(\"Summary fields only\", () => pm.expect(json[0]).to.have.keys(\"accession\", \"description\"));",
+                  "const pathwayCount = pm.collectionVariables.get(\"pathwayCount\");",
+                  "if (pathwayCount) {",
+                  "    pm.test(\"Includes the PATHWAY rows\", () => {",
+                  "        pm.expect(json.length).to.be.at.least(Number(pathwayCount));",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/genome-properties",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "genome-properties"
+              ]
+            },
+            "description": "Unfiltered list. Includes every type, so it is at least as long as the PATHWAY list."
+          },
+          "response": []
+        },
+        {
+          "name": "Unknown type is an empty list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Empty array\", () => pm.expect(pm.response.json()).to.eql([]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/genome-properties?type=NOT_A_TYPE",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "genome-properties"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "NOT_A_TYPE"
+                }
+              ]
+            },
+            "description": "An unrecognised type filters to nothing. It is not a 404."
+          },
+          "response": []
+        },
+        {
+          "name": "Type filter is case-sensitive",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Empty array\", () => pm.expect(pm.response.json()).to.eql([]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/genome-properties?type=pathway",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "genome-properties"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "pathway"
+                }
+              ]
+            },
+            "description": "Stored types are uppercase. A lowercase query does not match PATHWAY."
+          },
+          "response": []
+        },
+        {
+          "name": "List rejects POST",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 405\", () => pm.response.to.have.status(405));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/genome-properties",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "genome-properties"
+              ]
+            },
+            "description": "The list route is GET only."
+          },
+          "response": []
+        },
+        {
+          "name": "Property detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON content type\", () => {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.match(/application\\/json/);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Detail fields\", () => {",
+                  "    pm.expect(json).to.have.keys(",
+                  "        \"accession\",",
+                  "        \"type\",",
+                  "        \"author\",",
+                  "        \"description\",",
+                  "        \"threshold\",",
+                  "        \"comment\",",
+                  "        \"literature\",",
+                  "        \"databaseLinks\",",
+                  "        \"steps\"",
+                  "    );",
+                  "});",
+                  "pm.test(\"Accession matches\", () => pm.expect(json.accession).to.eql(pm.collectionVariables.get(\"accession\")));",
+                  "pm.test(\"Scalar fields\", () => {",
+                  "    pm.expect(json.type).to.be.a(\"string\").that.is.not.empty;",
+                  "    pm.expect(json.author).to.be.a(\"string\");",
+                  "    pm.expect(json.description).to.be.a(\"string\").that.is.not.empty;",
+                  "    pm.expect(json.threshold).to.be.a(\"number\");",
+                  "});",
+                  "pm.test(\"Camel-case collections\", () => {",
+                  "    pm.expect(json.literature).to.be.an(\"array\");",
+                  "    pm.expect(json.databaseLinks).to.be.an(\"array\");",
+                  "    pm.expect(json.steps).to.be.an(\"array\");",
+                  "    pm.expect(json).to.not.have.property(\"database_links\");",
+                  "});",
+                  "if (json.literature.length) {",
+                  "    pm.test(\"Literature shape\", () => {",
+                  "        pm.expect(json.literature[0]).to.include.keys(\"pmid\", \"listOrder\");",
+                  "        pm.expect(json.literature[0].pmid).to.be.a(\"number\");",
+                  "        pm.expect(json.literature[0]).to.not.have.property(\"list_order\");",
+                  "    });",
+                  "}",
+                  "if (json.databaseLinks.length) {",
+                  "    pm.test(\"Database link shape\", () => {",
+                  "        pm.expect(json.databaseLinks[0]).to.include.keys(\"dbId\", \"dbLink\");",
+                  "        pm.expect(json.databaseLinks[0]).to.not.have.property(\"db_id\");",
+                  "    });",
+                  "}",
+                  "if (json.steps.length) {",
+                  "    pm.test(\"Step shape\", () => {",
+                  "        const step = json.steps[0];",
+                  "        pm.expect(step).to.include.keys(\"stepId\", \"stepNumber\", \"required\", \"evidence\");",
+                  "        pm.expect(step.stepNumber).to.be.a(\"number\");",
+                  "        pm.expect(step.required).to.be.a(\"number\");",
+                  "        pm.expect(step.evidence).to.be.an(\"array\");",
+                  "        pm.expect(step).to.not.have.property(\"step_id\");",
+                  "        pm.expect(step).to.not.have.property(\"step_number\");",
+                  "        if (step.evidence.length) {",
+                  "            pm.expect(step.evidence[0]).to.include.keys(\"interproAcc\", \"signatureAcc\");",
+                  "            pm.expect(step.evidence[0]).to.not.have.property(\"interpro_acc\");",
+                  "        }",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/genome-properties/{{accession}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "genome-properties",
+                "{{accession}}"
+              ]
+            },
+            "description": "Literature, database links, and steps for one accession. Aliases are camelCase."
+          },
+          "response": []
+        },
+        {
+          "name": "Unknown property is 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"JSON content type\", () => {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.match(/application\\/json/);",
+                  "});",
+                  "pm.test(\"detail\", () => pm.expect(pm.response.json()).to.eql({ detail: \"Not found\" }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/genome-properties/NOPE",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "genome-properties",
+                "NOPE"
+              ]
+            },
+            "description": "Missing accessions return the shared error body."
+          },
+          "response": []
+        },
+        {
+          "name": "Accession match is case-sensitive",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"detail\", () => pm.expect(pm.response.json().detail).to.eql(\"Not found\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/genome-properties/genprop0001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "genome-properties",
+                "genprop0001"
+              ]
+            },
+            "description": "Accessions are stored as GenProp0001. A lowercase id is a different key."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hierarchy",
+      "item": [
+        {
+          "name": "Hierarchy tree",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON content type\", () => {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.match(/application\\/json/);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "function assertNode(node, ancestors) {",
+                  "    pm.expect(node).to.have.keys(\"accession\", \"description\", \"children\");",
+                  "    pm.expect(node.accession).to.be.a(\"string\").that.is.not.empty;",
+                  "    pm.expect(node.description).to.be.a(\"string\");",
+                  "    pm.expect(node.children).to.be.an(\"array\");",
+                  "    pm.expect(ancestors).to.not.include(node.accession);",
+                  "    const next = ancestors.concat(node.accession);",
+                  "    node.children.forEach((child) => assertNode(child, next));",
+                  "}",
+                  "pm.test(\"Root accession matches\", () => pm.expect(json.accession).to.eql(pm.collectionVariables.get(\"hierarchyRoot\")));",
+                  "pm.test(\"Tree shape\", () => assertNode(json, []));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/hierarchy/{{hierarchyRoot}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "hierarchy",
+                "{{hierarchyRoot}}"
+              ]
+            },
+            "description": "Child-property tree. Every node has accession, description, and children."
+          },
+          "response": []
+        },
+        {
+          "name": "Unknown hierarchy is 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"detail\", () => pm.expect(pm.response.json()).to.eql({ detail: \"Not found\" }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/hierarchy/NOPE",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "hierarchy",
+                "NOPE"
+              ]
+            },
+            "description": "Missing hierarchy roots use the same not-found body as properties."
+          },
+          "response": []
+        },
+        {
+          "name": "Hierarchy rejects POST",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 405\", () => pm.response.to.have.status(405));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/hierarchy/{{hierarchyRoot}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "hierarchy",
+                "{{hierarchyRoot}}"
+              ]
+            },
+            "description": "The hierarchy route is GET only."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Assignment",
+      "item": [
+        {
+          "name": "Assign from InterProScan TSV",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"JSON content type\", () => {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.match(/application\\/json/);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "const organism = pm.collectionVariables.get(\"organism\");",
+                  "const accessions = Object.keys(json);",
+                  "pm.test(\"Viewer object\", () => {",
+                  "    pm.expect(json).to.be.an(\"object\");",
+                  "    pm.expect(accessions).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  "const sample = json[accessions[0]];",
+                  "pm.test(\"Property record\", () => {",
+                  "    pm.expect(sample).to.have.keys(\"property\", \"name\", \"values\", \"steps\");",
+                  "    pm.expect(sample.property).to.eql(accessions[0]);",
+                  "    pm.expect(sample.name).to.be.a(\"string\");",
+                  "    pm.expect(sample.steps).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Organism column and totals\", () => {",
+                  "    pm.expect([\"YES\", \"PARTIAL\", \"NO\"]).to.include(sample.values[organism]);",
+                  "    pm.expect(sample.values.TOTAL).to.have.keys(\"YES\", \"PARTIAL\", \"NO\");",
+                  "    pm.expect(sample.values.TOTAL[sample.values[organism]]).to.eql(1);",
+                  "    [\"YES\", \"PARTIAL\", \"NO\"].filter((label) => label !== sample.values[organism]).forEach((label) => {",
+                  "        pm.expect(sample.values.TOTAL[label]).to.eql(0);",
+                  "    });",
+                  "});",
+                  "const withSteps = accessions.map((id) => json[id]).find((row) => row.steps.length > 0);",
+                  "pm.test(\"Step record uses viewer field names\", () => {",
+                  "    pm.expect(withSteps, \"a property with steps\").to.be.an(\"object\");",
+                  "    const step = withSteps.steps[0];",
+                  "    pm.expect(step).to.have.keys(\"step\", \"step_name\", \"required\", \"values\");",
+                  "    pm.expect(step.step).to.be.a(\"number\");",
+                  "    pm.expect(step.step_name).to.be.a(\"string\");",
+                  "    pm.expect(step.required).to.be.a(\"number\");",
+                  "    pm.expect(step.values[organism]).to.be.a(\"boolean\");",
+                  "    pm.expect(step).to.not.have.property(\"stepName\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "ipproname",
+                  "value": "{{organism}}.tsv",
+                  "type": "text"
+                },
+                {
+                  "key": "ipprotsv",
+                  "value": "{{interproScanTsv}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "assign"
+              ]
+            },
+            "description": "Urlencoded InterProScan TSV (interproscan.sh -f tsv), including a leading # comment. The .tsv suffix is stripped from the heatmap column name."
+          },
+          "response": []
+        },
+        {
+          "name": "Assign from InterPro entries TSV",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "const organism = pm.collectionVariables.get(\"entriesOrganism\");",
+                  "const accessions = Object.keys(json);",
+                  "pm.test(\"Viewer object\", () => pm.expect(accessions).to.be.an(\"array\").that.is.not.empty);",
+                  "pm.test(\"Entries column name\", () => {",
+                  "    pm.expect([\"YES\", \"PARTIAL\", \"NO\"]).to.include(json[accessions[0]].values[organism]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ipproname",
+                  "value": "{{entriesOrganism}}.tsv",
+                  "type": "text"
+                },
+                {
+                  "key": "ipprotsv",
+                  "value": "{{interproEntriesTsv}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "assign"
+              ]
+            },
+            "description": "Multipart form fields for an InterPro proteome Entries matching TSV. No file part."
+          },
+          "response": []
+        },
+        {
+          "name": "Assign from an uploaded file",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));\nconst json = pm.response.json();\nconst organism = pm.collectionVariables.get(\"uploadOrganism\");\nconst accessions = Object.keys(json);\npm.test(\"Viewer object\", () => pm.expect(accessions).to.be.an(\"array\").that.is.not.empty);\npm.test(\"Upload column name\", () => {\n    pm.expect([\"YES\", \"PARTIAL\", \"NO\"]).to.include(json[accessions[0]].values[organism]);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ipproname",
+                  "value": "{{uploadOrganism}}.tsv",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [
+                    "/Users/vikasg/Documents/genome-properties/ws/genome-properties-api/postman/fixtures/interpro-entries.tsv"
+                  ]
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "assign"
+              ]
+            },
+            "description": "Multipart file upload. Run the collection from the repository root so postman/fixtures/interpro-entries.tsv resolves."
+          },
+          "response": []
+        },
+        {
+          "name": "Empty upload is 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"detail asks for a TSV\", () => {",
+                  "    pm.expect(json.detail).to.be.a(\"string\");",
+                  "    pm.expect(json.detail).to.include(\"ipprotsv\");",
+                  "    pm.expect(json.detail).to.include(\"InterProScan\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": []
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "assign"
+              ]
+            },
+            "description": "A POST with neither file nor ipprotsv is rejected before parsing."
+          },
+          "response": []
+        },
+        {
+          "name": "Genome Properties summary is 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"detail names the accepted formats\", () => {",
+                  "    pm.expect(pm.response.json().detail).to.include(\"not an InterProScan TSV\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "ipproname",
+                  "value": "summary.gp",
+                  "type": "text"
+                },
+                {
+                  "key": "ipprotsv",
+                  "value": "{{summaryTsv}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "assign"
+              ]
+            },
+            "description": "A Genome Properties YES/NO summary is not an InterPro TSV and is rejected."
+          },
+          "response": []
+        },
+        {
+          "name": "Header-only entries TSV is 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"detail names the accepted formats\", () => {",
+                  "    pm.expect(pm.response.json().detail).to.include(\"not an InterProScan TSV\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "ipproname",
+                  "value": "empty-entries.tsv",
+                  "type": "text"
+                },
+                {
+                  "key": "ipprotsv",
+                  "value": "{{entriesHeaderOnly}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "assign"
+              ]
+            },
+            "description": "An entries header with no IPR rows has nothing to assign and is rejected."
+          },
+          "response": []
+        },
+        {
+          "name": "Assign rejects GET",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 405\", () => pm.response.to.have.status(405));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiRoot}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiRoot}}",
+                "assign"
+              ]
+            },
+            "description": "Assignment is POST only."
+          },
+          "response": []
+        }
+      ],
+      "description": "POST /assign reads an InterProScan TSV or an InterPro entries TSV and returns Viewer web_json. Success calls need the Genome Properties database. Rejected uploads return 400 without it."
+    },
+    {
+      "name": "Local script prefix",
+      "item": [
+        {
+          "name": "Prefixed liveness",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));\npm.test(\"status ok\", () => pm.expect(pm.response.json()).to.eql({ status: \"ok\" }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/health/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "health",
+                ""
+              ]
+            },
+            "description": "Liveness on the built-in script prefix."
+          },
+          "response": []
+        },
+        {
+          "name": "Prefixed versioned liveness",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));\npm.test(\"status ok\", () => pm.expect(pm.response.json()).to.eql({ status: \"ok\" }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ]
+            },
+            "description": "Versioned liveness on the built-in script prefix."
+          },
+          "response": []
+        },
+        {
+          "name": "Prefixed property list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Array of properties\", () => pm.expect(json).to.be.an(\"array\").that.is.not.empty);",
+                  "pm.test(\"Summary fields only\", () => pm.expect(json[0]).to.have.keys(\"accession\", \"description\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/genomeproperties/api/v1/genome-properties?type={{type}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "genomeproperties",
+                "api",
+                "v1",
+                "genome-properties"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "{{type}}"
+                }
+              ]
+            },
+            "description": "Same list route under the script prefix."
+          },
+          "response": []
+        },
+        {
+          "name": "Prefixed unknown property is 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));\npm.test(\"detail\", () => pm.expect(pm.response.json()).to.eql({ detail: \"Not found\" }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/genome-properties/NOPE",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "genome-properties",
+                "NOPE"
+              ]
+            },
+            "description": "Not-found behaviour is the same under the script prefix."
+          },
+          "response": []
+        }
+      ],
+      "description": "The Django process also mounts /genomeproperties/api/. These requests hit that mount on a local server. The public dev ingress uses interpro/genomeproperties/api instead; point apiRoot there and skip this folder."
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "apiRoot",
+      "value": "api/v1"
+    },
+    {
+      "key": "healthPath",
+      "value": "health/"
+    },
+    {
+      "key": "accession",
+      "value": "GenProp0001"
+    },
+    {
+      "key": "hierarchyRoot",
+      "value": "GenProp0065"
+    },
+    {
+      "key": "type",
+      "value": "PATHWAY"
+    },
+    {
+      "key": "categoryType",
+      "value": "CATEGORY"
+    },
+    {
+      "key": "organism",
+      "value": "demo"
+    },
+    {
+      "key": "entriesOrganism",
+      "value": "entries-demo"
+    },
+    {
+      "key": "uploadOrganism",
+      "value": "upload-demo"
+    },
+    {
+      "key": "interproScanTsv",
+      "value": "# genome-properties smoke\nprot1\taaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\t100\tPfam\tPF00001\tdesc\t1\t50\t1e-5\tT\t01-01-2020\n"
+    },
+    {
+      "key": "interproEntriesTsv",
+      "value": "Accession\tName\nIPR000001\tKringle\nIPR000002\tSerpin\n"
+    },
+    {
+      "key": "entriesHeaderOnly",
+      "value": "Accession\tName\n"
+    },
+    {
+      "key": "summaryTsv",
+      "value": "GenProp0001\tName\tYES\n"
+    },
+    {
+      "key": "pathwayCount",
+      "value": ""
+    }
+  ]
+}
